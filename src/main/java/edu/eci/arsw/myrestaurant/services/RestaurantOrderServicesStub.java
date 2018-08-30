@@ -1,6 +1,5 @@
 package edu.eci.arsw.myrestaurant.services;
 
-
 import edu.eci.arsw.myrestaurant.model.Order;
 import edu.eci.arsw.myrestaurant.model.RestaurantProduct;
 import edu.eci.arsw.myrestaurant.beans.BillCalculator;
@@ -9,12 +8,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 @Service
 public class RestaurantOrderServicesStub implements RestaurantOrderServices {
 
     @Autowired
+    @Qualifier("Taxes")
     BillCalculator calc = null;
 
     public RestaurantOrderServicesStub() {
@@ -85,11 +86,10 @@ public class RestaurantOrderServicesStub implements RestaurantOrderServices {
     private static final Map<String, RestaurantProduct> productsMap;
 
     private static final Map<Integer, Order> tableOrders;
-    
 
     static {
         productsMap = new ConcurrentHashMap<>();
-        tableOrders = new ConcurrentHashMap<>();        
+        tableOrders = new ConcurrentHashMap<>();
         productsMap.put("PIZZA", new RestaurantProduct("PIZZA", 10000, ProductType.DISH));
         productsMap.put("HOTDOG", new RestaurantProduct("HOTDOG", 3000, ProductType.DISH));
         productsMap.put("COKE", new RestaurantProduct("COKE", 1300, ProductType.DRINK));
@@ -108,6 +108,19 @@ public class RestaurantOrderServicesStub implements RestaurantOrderServices {
         o2.addDish("COKE", 2);
 
         tableOrders.put(3, o2);
+        
+        Order o3 = new Order(4);
+        o3.addDish("PIZZA", 3);
+        o3.addDish("HAMBURGER", 2);
+        o3.addDish("HOTDOG", 1);
+        
+        tableOrders.put(4, o3);
+        
+        Order o4 = new Order(5);
+        o4.addDish("COKE", 4);
+        o4.addDish("BEER", 2);
+        
+        tableOrders.put(5, o4);
     }
 
 }

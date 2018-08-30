@@ -1,0 +1,5 @@
+Parte IV - Tercer punto.
+	- Un usuario puede estar agregando un nuevo producto a una orden de una mesa X, 
+	  mientras que otro usuario puede cancelar la orden de la mesa X. De igual manera
+	  puede suceder que al calcular la cuenta de la mesa X otro usuario cancele la 
+	  orden de dicha mesa.

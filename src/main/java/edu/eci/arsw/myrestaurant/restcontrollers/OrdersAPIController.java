@@ -16,16 +16,11 @@
  */
 package edu.eci.arsw.myrestaurant.restcontrollers;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.eci.arsw.myrestaurant.model.Order;
-import edu.eci.arsw.myrestaurant.model.ProductType;
-import edu.eci.arsw.myrestaurant.model.RestaurantProduct;
 import edu.eci.arsw.myrestaurant.services.OrderServicesException;
 import edu.eci.arsw.myrestaurant.services.RestaurantOrderServices;
-import edu.eci.arsw.myrestaurant.services.RestaurantOrderServicesStub;
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -35,8 +30,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -54,48 +52,45 @@ public class OrdersAPIController {
     @Autowired
     private RestaurantOrderServices ros;
 
+    /**
+     * Parte I - Primer punto.
+     * @return
+     */
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<?> manejadorGetRecursoOrders() {
-        try {
-            //obtener datos que se enviarán a través del API
-            Set<Integer> set = ros.getTablesWithOrders();
-            Map<Integer, Order> ordersMap = new ConcurrentHashMap<>();
-            for (Integer i : set) {
-                ordersMap.put(i, ros.getTableOrder(i));
-            }
-            ObjectMapper objectMap = new ObjectMapper();
-            String json = objectMap.writeValueAsString(ordersMap);
-            return new ResponseEntity<>(json, HttpStatus.ACCEPTED);
-        } catch (JsonProcessingException ex) {
-            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
-            return new ResponseEntity<>("Error json", HttpStatus.NOT_FOUND);
+        //obtener datos que se enviarán a través del API
+        Set<Integer> set = ros.getTablesWithOrders();
+        Map<Integer, Order> ordersMap = new ConcurrentHashMap<>();
+        for (Integer i : set) {
+            ordersMap.put(i, ros.getTableOrder(i));
         }
+        return new ResponseEntity<>(ordersMap, HttpStatus.ACCEPTED);
     }
 
+    /**
+     * Parte I - Tercer punto.
+     * @param tableId
+     * @return
+     */
     @GetMapping("/{tableId}")
     public ResponseEntity<?> manejadorGetRecursoTableOrder(@PathVariable int tableId) {
-        try {
-            //obtener datos que se enviarán a través del API
-            HttpStatus respuesta;
-            String json;
-            Order order = ros.getTableOrder(tableId);
-            if (order != null) {
-                Map<Integer, Order> ordersMap = new ConcurrentHashMap<>();
-                ordersMap.put(tableId, order);
-                ObjectMapper objectMap = new ObjectMapper();
-                json = objectMap.writeValueAsString(ordersMap);
-                respuesta = HttpStatus.ACCEPTED;
-            } else {
-                json = "La mesa no existe o no tiene ordenes";
-                respuesta = HttpStatus.NOT_FOUND;
-            }
-            return new ResponseEntity<>(json, respuesta);
-        } catch (JsonProcessingException ex) {
-            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
-            return new ResponseEntity<>("Error json", HttpStatus.NOT_FOUND);
+        //obtener datos que se enviarán a través del API
+        Order order = ros.getTableOrder(tableId);
+        if (order != null) {
+            Map<Integer, Order> ordersMap = new ConcurrentHashMap<>();
+            ordersMap.put(tableId, order);
+            return new ResponseEntity<>(ordersMap, HttpStatus.ACCEPTED);
+        } else {
+            return new ResponseEntity<>("La mesa no existe o no tiene ordenes", HttpStatus.NOT_FOUND);
         }
     }
 
+    /**
+     * Parte II - Primer punto.
+     *
+     * @param o Order en formato JSON
+     * @return
+     */
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<?> manejadorPostRecursoOrder(@RequestBody String o) {
         try {
@@ -110,6 +105,67 @@ public class OrdersAPIController {
         } catch (IOException ex) {
             Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
             return new ResponseEntity<>("Error al abrir", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    /**
+     * Parte III - Cuarto punto.
+     *
+     * @param tableId
+     * @return
+     */
+    @GetMapping("/{tableId}/total")
+    public ResponseEntity<?> manejadorGetRecursoTotalBill(@PathVariable int tableId) {
+        try {
+            //obtener datos que se enviarán a través del API
+            int totalBill = ros.calculateTableBill(tableId);
+            String json = "La cuenta total de la mesa " + tableId + " es: " + totalBill;
+            return new ResponseEntity<>(json, HttpStatus.ACCEPTED);
+        } catch (OrderServicesException ex) {
+            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>("La mesa: " + tableId + "ya fue liberada o no tiene ordenes.", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    /**
+     * Parte IV - Primer punto.
+     *
+     * @param tableId
+     * @param p Producto
+     * @return
+     */
+    @PutMapping("/{tableId}")
+    public ResponseEntity<?> manejadorPutAddProduct(@ModelAttribute("tableId") int tableId, @RequestBody String p) {
+        try {
+            //registrar dato
+            ObjectMapper objectMap = new ObjectMapper();
+            Map<String, Integer> product = objectMap.readValue(p, ConcurrentHashMap.class);
+            Set<String> keys = product.keySet();
+            Order order = ros.getTableOrder(tableId);
+            for (String k : keys) {
+                order.addDish(k, product.get(k));
+            }
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (IOException ex) {
+            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>("Error al abrir", HttpStatus.FORBIDDEN);
+        }
+    }
+
+    /**
+     * Parte IV - Segundo punto.
+     *
+     * @param tableId
+     * @return
+     */
+    @DeleteMapping("tableId")
+    public ResponseEntity<?> manejadorDeleteReleaseTable(@PathVariable int tableId) {
+        try {
+            ros.releaseTable(tableId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (OrderServicesException ex) {
+            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>("La mesa: " + tableId + " ya fue liberada.", HttpStatus.NOT_FOUND);
         }
     }
 }
