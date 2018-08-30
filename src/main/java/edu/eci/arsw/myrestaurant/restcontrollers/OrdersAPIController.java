@@ -54,6 +54,7 @@ public class OrdersAPIController {
 
     /**
      * Parte I - Primer punto.
+     *
      * @return
      */
     @RequestMapping(method = RequestMethod.GET)
@@ -69,6 +70,7 @@ public class OrdersAPIController {
 
     /**
      * Parte I - Tercer punto.
+     *
      * @param tableId
      * @return
      */
@@ -123,7 +125,7 @@ public class OrdersAPIController {
             return new ResponseEntity<>(json, HttpStatus.ACCEPTED);
         } catch (OrderServicesException ex) {
             Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
-            return new ResponseEntity<>("La mesa: " + tableId + "ya fue liberada o no tiene ordenes.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("La mesa: " + tableId + " ya fue liberada o no tiene ordenes.", HttpStatus.NOT_FOUND);
         }
     }
 
@@ -152,14 +154,26 @@ public class OrdersAPIController {
         }
     }
 
+    //Posible implementacion.
+    /*@DeleteMapping("/{tableId}")
+    public ResponseEntity<?> manejadorDeleteReleaseTable(@PathVariable int tableId) {
+        try {
+            ros.releaseTable(tableId);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (OrderServicesException ex) {
+            Logger.getLogger(OrdersAPIController.class.getName()).log(Level.SEVERE, null, ex);
+            return new ResponseEntity<>("La mesa: " + tableId + " ya fue liberada.", HttpStatus.NOT_FOUND);
+        }
+    }*/
+    
     /**
      * Parte IV - Segundo punto.
      *
      * @param tableId
      * @return
      */
-    @DeleteMapping("tableId")
-    public ResponseEntity<?> manejadorDeleteReleaseTable(@PathVariable int tableId) {
+    @RequestMapping(method = RequestMethod.DELETE)
+    public ResponseEntity<?> manejadorDeleteReleaseTable(@RequestBody int tableId) {
         try {
             ros.releaseTable(tableId);
             return new ResponseEntity<>(HttpStatus.OK);
